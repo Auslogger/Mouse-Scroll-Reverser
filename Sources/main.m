@@ -121,6 +121,13 @@ static CGEventRef scrollEventCallback(
         keyEquivalent:@""];
     status.enabled = NO;
     [menu addItem:status];
+
+    NSMenuItem *accessibility = [[NSMenuItem alloc]
+        initWithTitle:@"Open Accessibility Settings…"
+        action:@selector(openAccessibilitySettings:)
+        keyEquivalent:@""];
+    accessibility.target = self;
+    [menu addItem:accessibility];
     [menu addItem:[NSMenuItem separatorItem]];
 
     NSMenuItem *quit = [[NSMenuItem alloc]
@@ -174,6 +181,14 @@ static CGEventRef scrollEventCallback(
 
     CGEventTapEnable(self.eventTap, true);
     return YES;
+}
+
+- (void)openAccessibilitySettings:(id)sender {
+    (void)sender;
+
+    NSURL *settingsURL = [NSURL URLWithString:
+        @"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
+    [[NSWorkspace sharedWorkspace] openURL:settingsURL];
 }
 
 - (void)quit:(id)sender {
