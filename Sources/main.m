@@ -2,6 +2,7 @@
 #import <Cocoa/Cocoa.h>
 
 static CFMachPortRef activeEventTap = NULL;
+static bool reversingEnabled = true;
 
 static void reverseVerticalScroll(CGEventRef event) {
     int64_t lineDelta = CGEventGetIntegerValueField(
@@ -53,6 +54,10 @@ static CGEventRef scrollEventCallback(
         return event;
     }
 
+    if (!reversingEnabled) {
+        return event;
+    }
+
     bool isContinuous = CGEventGetIntegerValueField(
         event,
         kCGScrollWheelEventIsContinuous
@@ -67,6 +72,7 @@ static CGEventRef scrollEventCallback(
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @property(nonatomic, strong) NSStatusItem *statusItem;
+@property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, assign) CFMachPortRef eventTap;
 @property(nonatomic, assign) CFRunLoopSourceRef runLoopSource;
@@ -119,6 +125,15 @@ static CGEventRef scrollEventCallback(
         accessibilityDescription:@"Mouse Scroll Reverser"];
 
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Mouse Scroll Reverser"];
+
+    self.enabledMenuItem = [[NSMenuItem alloc]
+        initWithTitle:@"Reverse Mouse Scrolling"
+        action:@selector(toggleEnabled:)
+        keyEquivalent:@""];
+    self.enabledMenuItem.target = self;
+    self.enabledMenuItem.state = NSControlStateValueOn;
+    [menu addItem:self.enabledMenuItem];
+
     self.statusMenuItem = [[NSMenuItem alloc]
         initWithTitle:@"Starting mouse wheel reversal…"
         action:nil
@@ -141,6 +156,18 @@ static CGEventRef scrollEventCallback(
     quit.target = self;
     [menu addItem:quit];
     self.statusItem.menu = menu;
+}
+
+- (void)toggleEnabled:(id)sender {
+    (void)sender;
+
+    reversingEnabled = !reversingEnabled;
+    self.enabledMenuItem.state = reversingEnabled
+        ? NSControlStateValueOn
+        : NSControlStateValueOff;
+    self.statusMenuItem.title = reversingEnabled
+        ? @"Mouse wheel reversal is active"
+        : @"Mouse wheel reversal is off";
 }
 
 - (void)requestAccessibilityPermission {
