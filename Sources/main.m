@@ -67,6 +67,7 @@ static CGEventRef scrollEventCallback(
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @property(nonatomic, strong) NSStatusItem *statusItem;
+@property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, assign) CFMachPortRef eventTap;
 @property(nonatomic, assign) CFRunLoopSourceRef runLoopSource;
 @end
@@ -80,7 +81,10 @@ static CGEventRef scrollEventCallback(
     [self buildMenu];
     [self requestAccessibilityPermission];
 
-    if (![self startEventTap]) {
+    if ([self startEventTap]) {
+        self.statusMenuItem.title = @"Mouse wheel reversal is active";
+    } else {
+        self.statusMenuItem.title = @"Accessibility permission is required";
         self.statusItem.button.toolTip =
             @"Accessibility permission is required";
     }
@@ -115,12 +119,12 @@ static CGEventRef scrollEventCallback(
         accessibilityDescription:@"Mouse Scroll Reverser"];
 
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Mouse Scroll Reverser"];
-    NSMenuItem *status = [[NSMenuItem alloc]
-        initWithTitle:@"Mouse wheel reversal is active"
+    self.statusMenuItem = [[NSMenuItem alloc]
+        initWithTitle:@"Starting mouse wheel reversal…"
         action:nil
         keyEquivalent:@""];
-    status.enabled = NO;
-    [menu addItem:status];
+    self.statusMenuItem.enabled = NO;
+    [menu addItem:self.statusMenuItem];
 
     NSMenuItem *accessibility = [[NSMenuItem alloc]
         initWithTitle:@"Open Accessibility Settings…"
