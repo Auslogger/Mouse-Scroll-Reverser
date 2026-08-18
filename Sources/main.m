@@ -3,6 +3,7 @@
 
 static CFMachPortRef activeEventTap = NULL;
 static bool reversingEnabled = true;
+static NSString *const EnabledPreferenceKey = @"Enabled";
 
 static void reverseVerticalScroll(CGEventRef event) {
     int64_t lineDelta = CGEventGetIntegerValueField(
@@ -84,6 +85,11 @@ static CGEventRef scrollEventCallback(
     (void)notification;
 
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults registerDefaults:@{ EnabledPreferenceKey: @YES }];
+    reversingEnabled = [defaults boolForKey:EnabledPreferenceKey];
+
     [self buildMenu];
     [self requestAccessibilityPermission];
 
@@ -131,7 +137,9 @@ static CGEventRef scrollEventCallback(
         action:@selector(toggleEnabled:)
         keyEquivalent:@""];
     self.enabledMenuItem.target = self;
-    self.enabledMenuItem.state = NSControlStateValueOn;
+    self.enabledMenuItem.state = reversingEnabled
+        ? NSControlStateValueOn
+        : NSControlStateValueOff;
     [menu addItem:self.enabledMenuItem];
 
     self.statusMenuItem = [[NSMenuItem alloc]
@@ -162,6 +170,9 @@ static CGEventRef scrollEventCallback(
     (void)sender;
 
     reversingEnabled = !reversingEnabled;
+    [[NSUserDefaults standardUserDefaults]
+        setBool:reversingEnabled
+        forKey:EnabledPreferenceKey];
     self.enabledMenuItem.state = reversingEnabled
         ? NSControlStateValueOn
         : NSControlStateValueOff;
