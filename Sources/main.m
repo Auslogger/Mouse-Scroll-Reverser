@@ -75,6 +75,7 @@ static CGEventRef scrollEventCallback(
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
+@property(nonatomic, strong) NSTimer *retryTimer;
 @property(nonatomic, assign) CFMachPortRef eventTap;
 @property(nonatomic, assign) CFRunLoopSourceRef runLoopSource;
 @end
@@ -100,10 +101,19 @@ static CGEventRef scrollEventCallback(
         self.statusItem.button.toolTip =
             @"Accessibility permission is required";
     }
+
+    self.retryTimer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                       target:self
+                                                     selector:@selector(retryEventTap:)
+                                                     userInfo:nil
+                                                      repeats:YES];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
     (void)notification;
+
+    [self.retryTimer invalidate];
+    self.retryTimer = nil;
 
     if (self.runLoopSource != NULL) {
         CFRunLoopRemoveSource(
@@ -164,6 +174,17 @@ static CGEventRef scrollEventCallback(
     quit.target = self;
     [menu addItem:quit];
     self.statusItem.menu = menu;
+}
+
+- (void)retryEventTap:(NSTimer *)timer {
+    (void)timer;
+
+    if (self.eventTap == NULL && AXIsProcessTrusted() && [self startEventTap]) {
+        self.statusMenuItem.title = reversingEnabled
+            ? @"Mouse wheel reversal is active"
+            : @"Mouse wheel reversal is off";
+        self.statusItem.button.toolTip = @"Mouse Scroll Reverser";
+    }
 }
 
 - (void)toggleEnabled:(id)sender {
