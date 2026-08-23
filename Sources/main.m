@@ -115,6 +115,10 @@ static CGEventRef scrollEventCallback(
     [self.retryTimer invalidate];
     self.retryTimer = nil;
 
+    [self stopEventTap];
+}
+
+- (void)stopEventTap {
     if (self.runLoopSource != NULL) {
         CFRunLoopRemoveSource(
             CFRunLoopGetMain(),
@@ -230,9 +234,7 @@ static CGEventRef scrollEventCallback(
         0
     );
     if (self.runLoopSource == NULL) {
-        CFRelease(self.eventTap);
-        self.eventTap = NULL;
-        activeEventTap = NULL;
+        [self stopEventTap];
         return NO;
     }
 
