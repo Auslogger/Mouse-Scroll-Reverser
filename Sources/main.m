@@ -1,5 +1,6 @@
 #import <ApplicationServices/ApplicationServices.h>
 #import <Cocoa/Cocoa.h>
+#import "AppDelegate.h"
 
 static CFMachPortRef activeEventTap = NULL;
 static bool reversingEnabled = true;
@@ -71,7 +72,7 @@ static CGEventRef scrollEventCallback(
     return event;
 }
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
+@interface AppDelegate ()
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
