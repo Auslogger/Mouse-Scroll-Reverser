@@ -9,12 +9,12 @@ EXECUTABLE := $(MACOS_DIR)/$(APP_NAME)
 
 all: $(EXECUTABLE) $(CONTENTS_DIR)/Info.plist
 
-$(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h
+$(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h Sources/ScrollTap.c Sources/ScrollTap.h
 	mkdir -p "$(MACOS_DIR)"
 	xcrun clang -fobjc-arc -Wall -Wextra \
 		-framework Cocoa \
 		-framework ApplicationServices \
-		Sources/main.m Sources/AppDelegate.m -o "$@"
+		Sources/main.m Sources/AppDelegate.m Sources/ScrollTap.c -o "$@"
 
 $(CONTENTS_DIR)/Info.plist: Resources/Info.plist
 	mkdir -p "$(CONTENTS_DIR)"

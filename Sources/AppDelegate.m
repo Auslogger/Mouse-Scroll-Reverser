@@ -1,75 +1,16 @@
 #import "AppDelegate.h"
 #import <ApplicationServices/ApplicationServices.h>
+#import "ScrollTap.h"
 
-static CFMachPortRef activeEventTap = NULL;
 static bool reversingEnabled = true;
 static NSString *const EnabledPreferenceKey = @"Enabled";
 
-static void reverseVerticalScroll(CGEventRef event) {
-    int64_t lineDelta = CGEventGetIntegerValueField(
-        event,
-        kCGScrollWheelEventDeltaAxis1
-    );
-    double fixedDelta = CGEventGetDoubleValueField(
-        event,
-        kCGScrollWheelEventFixedPtDeltaAxis1
-    );
-    int64_t pointDelta = CGEventGetIntegerValueField(
-        event,
-        kCGScrollWheelEventPointDeltaAxis1
-    );
-
-    CGEventSetIntegerValueField(
-        event,
-        kCGScrollWheelEventDeltaAxis1,
-        -lineDelta
-    );
-    CGEventSetDoubleValueField(
-        event,
-        kCGScrollWheelEventFixedPtDeltaAxis1,
-        -fixedDelta
-    );
-    CGEventSetIntegerValueField(
-        event,
-        kCGScrollWheelEventPointDeltaAxis1,
-        -pointDelta
-    );
-}
-
-static CGEventRef scrollEventCallback(
-    CGEventTapProxy proxy,
-    CGEventType type,
-    CGEventRef event,
-    void *userInfo
-) {
-    (void)proxy;
-    (void)userInfo;
-
-    if (type == kCGEventTapDisabledByTimeout && activeEventTap != NULL) {
-        CGEventTapEnable(activeEventTap, true);
-        return event;
-    }
-    if (type != kCGEventScrollWheel || !reversingEnabled) {
-        return event;
-    }
-
-    bool isContinuous = CGEventGetIntegerValueField(
-        event,
-        kCGScrollWheelEventIsContinuous
-    ) != 0;
-    if (!isContinuous) {
-        reverseVerticalScroll(event);
-    }
-    return event;
-}
-
 @interface AppDelegate ()
+@property(nonatomic) ScrollTap *scrollTap;
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, strong) NSTimer *retryTimer;
-@property(nonatomic, assign) CFMachPortRef eventTap;
-@property(nonatomic, assign) CFRunLoopSourceRef runLoopSource;
 @end
 
 @implementation AppDelegate
@@ -83,10 +24,12 @@ static CGEventRef scrollEventCallback(
     [defaults registerDefaults:@{ EnabledPreferenceKey: @YES }];
     reversingEnabled = [defaults boolForKey:EnabledPreferenceKey];
 
+    self.scrollTap = ScrollTapCreate();
+    ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
     [self buildMenu];
     [self requestAccessibilityPermission];
 
-    if ([self startEventTap]) {
+    if (ScrollTapStart(self.scrollTap)) {
         self.statusMenuItem.title = @"Mouse wheel reversal is active";
     } else {
         self.statusMenuItem.title = @"Accessibility permission is required";
@@ -106,26 +49,8 @@ static CGEventRef scrollEventCallback(
 
     [self.retryTimer invalidate];
     self.retryTimer = nil;
-    [self stopEventTap];
-}
-
-- (void)stopEventTap {
-    if (self.runLoopSource != NULL) {
-        CFRunLoopRemoveSource(
-            CFRunLoopGetMain(),
-            self.runLoopSource,
-            kCFRunLoopCommonModes
-        );
-        CFRelease(self.runLoopSource);
-        self.runLoopSource = NULL;
-    }
-
-    if (self.eventTap != NULL) {
-        CFMachPortInvalidate(self.eventTap);
-        CFRelease(self.eventTap);
-        self.eventTap = NULL;
-        activeEventTap = NULL;
-    }
+    ScrollTapDestroy(self.scrollTap);
+    self.scrollTap = NULL;
 }
 
 - (void)buildMenu {
@@ -174,7 +99,9 @@ static CGEventRef scrollEventCallback(
 - (void)retryEventTap:(NSTimer *)timer {
     (void)timer;
 
-    if (self.eventTap == NULL && AXIsProcessTrusted() && [self startEventTap]) {
+    if (!ScrollTapIsRunning(self.scrollTap) &&
+        AXIsProcessTrusted() &&
+        ScrollTapStart(self.scrollTap)) {
         self.statusMenuItem.title = reversingEnabled
             ? @"Mouse wheel reversal is active"
             : @"Mouse wheel reversal is off";
@@ -189,6 +116,7 @@ static CGEventRef scrollEventCallback(
     [[NSUserDefaults standardUserDefaults]
         setBool:reversingEnabled
         forKey:EnabledPreferenceKey];
+    ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
     self.enabledMenuItem.state = reversingEnabled
         ? NSControlStateValueOn
         : NSControlStateValueOff;
@@ -202,40 +130,6 @@ static CGEventRef scrollEventCallback(
         (__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES
     };
     AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
-}
-
-- (BOOL)startEventTap {
-    CGEventMask mask = CGEventMaskBit(kCGEventScrollWheel);
-    self.eventTap = CGEventTapCreate(
-        kCGSessionEventTap,
-        kCGHeadInsertEventTap,
-        kCGEventTapOptionDefault,
-        mask,
-        scrollEventCallback,
-        NULL
-    );
-    if (self.eventTap == NULL) {
-        return NO;
-    }
-    activeEventTap = self.eventTap;
-
-    self.runLoopSource = CFMachPortCreateRunLoopSource(
-        kCFAllocatorDefault,
-        self.eventTap,
-        0
-    );
-    if (self.runLoopSource == NULL) {
-        [self stopEventTap];
-        return NO;
-    }
-
-    CFRunLoopAddSource(
-        CFRunLoopGetMain(),
-        self.runLoopSource,
-        kCFRunLoopCommonModes
-    );
-    CGEventTapEnable(self.eventTap, true);
-    return YES;
 }
 
 - (void)openAccessibilitySettings:(id)sender {
