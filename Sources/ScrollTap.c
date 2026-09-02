@@ -22,7 +22,7 @@ static void reverse_axis(
     CGEventSetIntegerValueField(event, point_delta, -original_point);
 }
 
-static bool process_scroll_event(ScrollTap *tap, CGEventRef event) {
+bool ScrollTapProcessScrollEvent(ScrollTap *tap, CGEventRef event) {
     if (tap == NULL || event == NULL || !tap->enabled) {
         return false;
     }
@@ -61,7 +61,7 @@ static CGEventRef scroll_event_callback(
         return event;
     }
     if (type == kCGEventScrollWheel) {
-        (void)process_scroll_event(tap, event);
+        (void)ScrollTapProcessScrollEvent(tap, event);
     }
     return event;
 }

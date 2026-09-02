@@ -14,5 +14,7 @@ void ScrollTapStop(ScrollTap *tap);
 bool ScrollTapIsRunning(const ScrollTap *tap);
 void ScrollTapSetEnabled(ScrollTap *tap, bool enabled);
 
+bool ScrollTapProcessScrollEvent(ScrollTap *tap, CGEventRef event);
+
 #endif
 
