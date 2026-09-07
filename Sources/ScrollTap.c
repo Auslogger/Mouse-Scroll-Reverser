@@ -99,8 +99,14 @@ void ScrollTapDestroy(ScrollTap *tap) {
 }
 
 bool ScrollTapStart(ScrollTap *tap) {
-    if (tap == NULL || tap->event_tap != NULL) {
-        return tap != NULL;
+    if (tap == NULL) {
+        return false;
+    }
+    if (tap->event_tap != NULL) {
+        if (CGEventTapIsEnabled(tap->event_tap)) {
+            return true;
+        }
+        ScrollTapStop(tap);
     }
 
     const CGEventMask mask = CGEventMaskBit(kCGEventScrollWheel);
@@ -132,6 +138,10 @@ bool ScrollTapStart(ScrollTap *tap) {
         kCFRunLoopCommonModes
     );
     CGEventTapEnable(tap->event_tap, true);
+    if (!CGEventTapIsEnabled(tap->event_tap)) {
+        ScrollTapStop(tap);
+        return false;
+    }
     return true;
 }
 
