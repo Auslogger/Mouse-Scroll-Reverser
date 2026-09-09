@@ -29,13 +29,8 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     [self buildMenu];
     [self requestAccessibilityPermission];
 
-    if (ScrollTapStart(self.scrollTap)) {
-        self.statusMenuItem.title = @"Mouse wheel reversal is active";
-    } else {
-        self.statusMenuItem.title = @"Accessibility permission is required";
-        self.statusItem.button.toolTip =
-            @"Accessibility permission is required";
-    }
+    (void)ScrollTapStart(self.scrollTap);
+    [self refreshMenuState];
 
     self.retryTimer = [NSTimer scheduledTimerWithTimeInterval:1.0
                                                        target:self
@@ -102,10 +97,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     if (!ScrollTapIsRunning(self.scrollTap) &&
         AXIsProcessTrusted() &&
         ScrollTapStart(self.scrollTap)) {
-        self.statusMenuItem.title = reversingEnabled
-            ? @"Mouse wheel reversal is active"
-            : @"Mouse wheel reversal is off";
-        self.statusItem.button.toolTip = @"Mouse Scroll Reverser";
+        [self refreshMenuState];
     }
 }
 
@@ -117,12 +109,22 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         setBool:reversingEnabled
         forKey:EnabledPreferenceKey];
     ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
-    self.enabledMenuItem.state = reversingEnabled
+    [self refreshMenuState];
+}
+
+- (void)refreshMenuState {
+    const BOOL running = ScrollTapIsRunning(self.scrollTap);
+    self.enabledMenuItem.state = running
         ? NSControlStateValueOn
         : NSControlStateValueOff;
-    self.statusMenuItem.title = reversingEnabled
-        ? @"Mouse wheel reversal is active"
-        : @"Mouse wheel reversal is off";
+
+    if (!reversingEnabled) {
+        self.statusMenuItem.title = @"Status: Off";
+    } else if (running) {
+        self.statusMenuItem.title = @"Status: Running";
+    } else {
+        self.statusMenuItem.title = @"Status: Event tap is inactive";
+    }
 }
 
 - (void)requestAccessibilityPermission {
