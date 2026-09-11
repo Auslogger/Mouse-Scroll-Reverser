@@ -10,6 +10,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
+@property(nonatomic, strong) NSMenuItem *accessibilityMenuItem;
 @property(nonatomic, strong) NSTimer *retryTimer;
 @end
 
@@ -74,12 +75,12 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     self.statusMenuItem.enabled = NO;
     [menu addItem:self.statusMenuItem];
 
-    NSMenuItem *accessibility = [[NSMenuItem alloc]
+    self.accessibilityMenuItem = [[NSMenuItem alloc]
         initWithTitle:@"Open Accessibility Settings…"
         action:@selector(openAccessibilitySettings:)
         keyEquivalent:@""];
-    accessibility.target = self;
-    [menu addItem:accessibility];
+    self.accessibilityMenuItem.target = self;
+    [menu addItem:self.accessibilityMenuItem];
     [menu addItem:[NSMenuItem separatorItem]];
 
     NSMenuItem *quit = [[NSMenuItem alloc]
@@ -104,6 +105,16 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 - (void)toggleEnabled:(id)sender {
     (void)sender;
 
+    if (!AXIsProcessTrusted()) {
+        reversingEnabled = true;
+        [[NSUserDefaults standardUserDefaults]
+            setBool:YES
+            forKey:EnabledPreferenceKey];
+        [self requestAccessibilityPermission];
+        [self refreshMenuState];
+        return;
+    }
+
     reversingEnabled = !reversingEnabled;
     [[NSUserDefaults standardUserDefaults]
         setBool:reversingEnabled
@@ -114,12 +125,20 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 
 - (void)refreshMenuState {
     const BOOL running = ScrollTapIsRunning(self.scrollTap);
+    const BOOL permissionRequired =
+        reversingEnabled && !AXIsProcessTrusted();
     self.enabledMenuItem.state = running
         ? NSControlStateValueOn
         : NSControlStateValueOff;
+    self.enabledMenuItem.title = permissionRequired
+        ? @"Enable Reverse Mouse Scrolling…"
+        : @"Reverse Mouse Scrolling";
 
     if (!reversingEnabled) {
         self.statusMenuItem.title = @"Status: Off";
+    } else if (permissionRequired) {
+        self.statusMenuItem.title =
+            @"Status: Accessibility permission required";
     } else if (running) {
         self.statusMenuItem.title = @"Status: Running";
     } else {
