@@ -12,6 +12,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, strong) NSMenuItem *accessibilityMenuItem;
 @property(nonatomic, strong) NSTimer *retryTimer;
+@property(nonatomic) BOOL permissionPromptPending;
 @end
 
 @implementation AppDelegate
@@ -28,7 +29,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     self.scrollTap = ScrollTapCreate();
     ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
     [self buildMenu];
-    [self requestAccessibilityPermission];
+    [self scheduleAccessibilityPrompt];
 
     (void)ScrollTapStart(self.scrollTap);
     [self refreshMenuState];
@@ -110,7 +111,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         [[NSUserDefaults standardUserDefaults]
             setBool:YES
             forKey:EnabledPreferenceKey];
-        [self requestAccessibilityPermission];
+        [self scheduleAccessibilityPrompt];
         [self refreshMenuState];
         return;
     }
@@ -146,11 +147,28 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     }
 }
 
-- (void)requestAccessibilityPermission {
-    NSDictionary *options = @{
-        (__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES
-    };
-    AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
+- (void)scheduleAccessibilityPrompt {
+    if (self.permissionPromptPending || AXIsProcessTrusted()) {
+        return;
+    }
+
+    // let the menu action finish before macOS presents its prompt
+    self.permissionPromptPending = YES;
+    dispatch_after(
+        dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)),
+        dispatch_get_main_queue(),
+        ^{
+            self.permissionPromptPending = NO;
+            if (!AXIsProcessTrusted()) {
+                NSDictionary *options = @{
+                    (__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES
+                };
+                (void)AXIsProcessTrustedWithOptions(
+                    (__bridge CFDictionaryRef)options
+                );
+            }
+        }
+    );
 }
 
 - (void)openAccessibilitySettings:(id)sender {
