@@ -11,7 +11,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, strong) NSMenuItem *accessibilityMenuItem;
-@property(nonatomic, strong) NSTimer *retryTimer;
+@property(nonatomic, strong) NSTimer *refreshTimer;
 @property(nonatomic) BOOL permissionPromptPending;
 @end
 
@@ -34,18 +34,18 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     (void)ScrollTapStart(self.scrollTap);
     [self refreshMenuState];
 
-    self.retryTimer = [NSTimer scheduledTimerWithTimeInterval:1.0
-                                                       target:self
-                                                     selector:@selector(retryEventTap:)
-                                                     userInfo:nil
-                                                      repeats:YES];
+    self.refreshTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                         target:self
+                                                       selector:@selector(refreshState:)
+                                                       userInfo:nil
+                                                        repeats:YES];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
     (void)notification;
 
-    [self.retryTimer invalidate];
-    self.retryTimer = nil;
+    [self.refreshTimer invalidate];
+    self.refreshTimer = nil;
     ScrollTapDestroy(self.scrollTap);
     self.scrollTap = NULL;
 }
@@ -93,14 +93,11 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     self.statusItem.menu = menu;
 }
 
-- (void)retryEventTap:(NSTimer *)timer {
+- (void)refreshState:(NSTimer *)timer {
     (void)timer;
 
-    if (!ScrollTapIsRunning(self.scrollTap) &&
-        AXIsProcessTrusted() &&
-        ScrollTapStart(self.scrollTap)) {
-        [self refreshMenuState];
-    }
+    ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
+    [self refreshMenuState];
 }
 
 - (void)toggleEnabled:(id)sender {
