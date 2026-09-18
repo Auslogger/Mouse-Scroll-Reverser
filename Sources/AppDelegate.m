@@ -100,6 +100,8 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     if (!AXIsProcessTrusted()) {
         // a disabled tap can still own its run loop source
         ScrollTapStop(self.scrollTap);
+    } else if (reversingEnabled && !ScrollTapIsRunning(self.scrollTap)) {
+        (void)ScrollTapStart(self.scrollTap);
     }
     [self refreshMenuState];
 }
