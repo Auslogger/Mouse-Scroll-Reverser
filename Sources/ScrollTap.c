@@ -1,10 +1,12 @@
 #include "ScrollTap.h"
+#include <stdatomic.h>
 #include <stdlib.h>
 
 struct ScrollTap {
     CFMachPortRef event_tap;
     CFRunLoopSourceRef run_loop_source;
     bool enabled;
+    atomic_bool disabled_by_timeout;
 };
 
 static void reverse_axis(
@@ -57,7 +59,8 @@ static CGEventRef scroll_event_callback(
         return event;
     }
     if (type == kCGEventTapDisabledByTimeout) {
-        CGEventTapEnable(tap->event_tap, true);
+        // leave cleanup and restart to the main application loop
+        atomic_store(&tap->disabled_by_timeout, true);
         return event;
     }
     if (type == kCGEventScrollWheel) {
@@ -67,7 +70,11 @@ static CGEventRef scroll_event_callback(
 }
 
 ScrollTap *ScrollTapCreate(void) {
-    return calloc(1, sizeof(ScrollTap));
+    ScrollTap *tap = calloc(1, sizeof(ScrollTap));
+    if (tap != NULL) {
+        atomic_init(&tap->disabled_by_timeout, false);
+    }
+    return tap;
 }
 
 void ScrollTapStop(ScrollTap *tap) {
@@ -89,6 +96,7 @@ void ScrollTapStop(ScrollTap *tap) {
         CFRelease(tap->event_tap);
         tap->event_tap = NULL;
     }
+    atomic_store(&tap->disabled_by_timeout, false);
 }
 
 void ScrollTapDestroy(ScrollTap *tap) {
