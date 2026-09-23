@@ -7,6 +7,7 @@ struct ScrollTap {
     CFRunLoopSourceRef run_loop_source;
     bool enabled;
     atomic_bool disabled_by_timeout;
+    atomic_bool disabled_by_user_input;
 };
 
 static void reverse_axis(
@@ -63,6 +64,11 @@ static CGEventRef scroll_event_callback(
         atomic_store(&tap->disabled_by_timeout, true);
         return event;
     }
+    if (type == kCGEventTapDisabledByUserInput) {
+        // permission changes arrive through this callback
+        atomic_store(&tap->disabled_by_user_input, true);
+        return event;
+    }
     if (type == kCGEventScrollWheel) {
         (void)ScrollTapProcessScrollEvent(tap, event);
     }
@@ -73,6 +79,7 @@ ScrollTap *ScrollTapCreate(void) {
     ScrollTap *tap = calloc(1, sizeof(ScrollTap));
     if (tap != NULL) {
         atomic_init(&tap->disabled_by_timeout, false);
+        atomic_init(&tap->disabled_by_user_input, false);
     }
     return tap;
 }
@@ -97,6 +104,7 @@ void ScrollTapStop(ScrollTap *tap) {
         tap->event_tap = NULL;
     }
     atomic_store(&tap->disabled_by_timeout, false);
+    atomic_store(&tap->disabled_by_user_input, false);
 }
 
 void ScrollTapDestroy(ScrollTap *tap) {
