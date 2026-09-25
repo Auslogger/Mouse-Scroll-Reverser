@@ -97,6 +97,12 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     (void)timer;
 
     ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
+    ScrollTapDisableReason disableReason =
+        ScrollTapConsumeDisableReason(self.scrollTap);
+    if (disableReason != ScrollTapDisableReasonNone) {
+        // callbacks only signal; teardown stays on the main loop
+        ScrollTapStop(self.scrollTap);
+    }
     if (!AXIsProcessTrusted()) {
         // a disabled tap can still own its run loop source
         ScrollTapStop(self.scrollTap);

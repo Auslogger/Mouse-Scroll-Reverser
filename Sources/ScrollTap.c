@@ -6,8 +6,7 @@ struct ScrollTap {
     CFMachPortRef event_tap;
     CFRunLoopSourceRef run_loop_source;
     bool enabled;
-    atomic_bool disabled_by_timeout;
-    atomic_bool disabled_by_user_input;
+    atomic_int disable_reason;
 };
 
 static void reverse_axis(
@@ -61,12 +60,12 @@ static CGEventRef scroll_event_callback(
     }
     if (type == kCGEventTapDisabledByTimeout) {
         // leave cleanup and restart to the main application loop
-        atomic_store(&tap->disabled_by_timeout, true);
+        atomic_store(&tap->disable_reason, ScrollTapDisableReasonTimeout);
         return event;
     }
     if (type == kCGEventTapDisabledByUserInput) {
         // permission changes arrive through this callback
-        atomic_store(&tap->disabled_by_user_input, true);
+        atomic_store(&tap->disable_reason, ScrollTapDisableReasonUserInput);
         return event;
     }
     if (type == kCGEventScrollWheel) {
@@ -78,8 +77,7 @@ static CGEventRef scroll_event_callback(
 ScrollTap *ScrollTapCreate(void) {
     ScrollTap *tap = calloc(1, sizeof(ScrollTap));
     if (tap != NULL) {
-        atomic_init(&tap->disabled_by_timeout, false);
-        atomic_init(&tap->disabled_by_user_input, false);
+        atomic_init(&tap->disable_reason, ScrollTapDisableReasonNone);
     }
     return tap;
 }
@@ -103,8 +101,7 @@ void ScrollTapStop(ScrollTap *tap) {
         CFRelease(tap->event_tap);
         tap->event_tap = NULL;
     }
-    atomic_store(&tap->disabled_by_timeout, false);
-    atomic_store(&tap->disabled_by_user_input, false);
+    atomic_store(&tap->disable_reason, ScrollTapDisableReasonNone);
 }
 
 void ScrollTapDestroy(ScrollTap *tap) {
@@ -171,5 +168,15 @@ void ScrollTapSetEnabled(ScrollTap *tap, bool enabled) {
     if (tap != NULL) {
         tap->enabled = enabled;
     }
+}
+
+ScrollTapDisableReason ScrollTapConsumeDisableReason(ScrollTap *tap) {
+    if (tap == NULL) {
+        return ScrollTapDisableReasonNone;
+    }
+    return (ScrollTapDisableReason)atomic_exchange(
+        &tap->disable_reason,
+        ScrollTapDisableReasonNone
+    );
 }
 
