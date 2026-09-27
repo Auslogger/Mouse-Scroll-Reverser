@@ -7,6 +7,9 @@ struct ScrollTap {
     CFRunLoopSourceRef run_loop_source;
     bool enabled;
     atomic_int disable_reason;
+    uint64_t reversed_event_count;
+    uint64_t passed_through_event_count;
+    ScrollTapLastInput last_input;
 };
 
 static void reverse_axis(
@@ -34,6 +37,8 @@ bool ScrollTapProcessScrollEvent(ScrollTap *tap, CGEventRef event) {
         kCGScrollWheelEventIsContinuous
     ) != 0;
     if (is_continuous) {
+        tap->passed_through_event_count += 1;
+        tap->last_input = ScrollTapLastInputContinuousPassedThrough;
         return false;
     }
 
@@ -43,6 +48,8 @@ bool ScrollTapProcessScrollEvent(ScrollTap *tap, CGEventRef event) {
         kCGScrollWheelEventFixedPtDeltaAxis1,
         kCGScrollWheelEventPointDeltaAxis1
     );
+    tap->reversed_event_count += 1;
+    tap->last_input = ScrollTapLastInputMouseWheelReversed;
     return true;
 }
 
@@ -178,5 +185,17 @@ ScrollTapDisableReason ScrollTapConsumeDisableReason(ScrollTap *tap) {
         &tap->disable_reason,
         ScrollTapDisableReasonNone
     );
+}
+
+uint64_t ScrollTapReversedEventCount(const ScrollTap *tap) {
+    return tap == NULL ? 0 : tap->reversed_event_count;
+}
+
+uint64_t ScrollTapPassedThroughEventCount(const ScrollTap *tap) {
+    return tap == NULL ? 0 : tap->passed_through_event_count;
+}
+
+ScrollTapLastInput ScrollTapGetLastInput(const ScrollTap *tap) {
+    return tap == NULL ? ScrollTapLastInputNone : tap->last_input;
 }
 
