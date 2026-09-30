@@ -1,16 +1,38 @@
 #include "ScrollTap.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 
-static CGEventRef make_discrete_event(int64_t vertical_delta) {
+static CGEventRef make_discrete_event(
+    int64_t vertical_line,
+    double vertical_fixed,
+    int64_t vertical_point,
+    int64_t horizontal_line
+) {
     CGEventRef event = CGEventCreateScrollWheelEvent(
         NULL,
         kCGScrollEventUnitLine,
-        1,
-        (int32_t)vertical_delta
+        2,
+        (int32_t)vertical_line,
+        (int32_t)horizontal_line
     );
     assert(event != NULL);
+    CGEventSetIntegerValueField(
+        event,
+        kCGScrollWheelEventDeltaAxis1,
+        vertical_line
+    );
+    CGEventSetDoubleValueField(
+        event,
+        kCGScrollWheelEventFixedPtDeltaAxis1,
+        vertical_fixed
+    );
+    CGEventSetIntegerValueField(
+        event,
+        kCGScrollWheelEventPointDeltaAxis1,
+        vertical_point
+    );
     CGEventSetIntegerValueField(
         event,
         kCGScrollWheelEventIsContinuous,
@@ -23,7 +45,7 @@ static void test_disabled_filter_does_nothing(void) {
     ScrollTap *tap = ScrollTapCreate();
     assert(tap != NULL);
 
-    CGEventRef event = make_discrete_event(3);
+    CGEventRef event = make_discrete_event(3, 3.5, 24, 0);
     assert(!ScrollTapProcessScrollEvent(tap, event));
     assert(CGEventGetIntegerValueField(
         event,
@@ -39,12 +61,27 @@ static void test_discrete_vertical_is_reversed(void) {
     assert(tap != NULL);
     ScrollTapSetEnabled(tap, true);
 
-    CGEventRef event = make_discrete_event(4);
+    CGEventRef event = make_discrete_event(4, 2.5, 20, 3);
     assert(ScrollTapProcessScrollEvent(tap, event));
     assert(CGEventGetIntegerValueField(
         event,
         kCGScrollWheelEventDeltaAxis1
     ) == -4);
+    assert(fabs(CGEventGetDoubleValueField(
+        event,
+        kCGScrollWheelEventFixedPtDeltaAxis1
+    ) - (-2.5)) < 0.0001);
+    assert(CGEventGetIntegerValueField(
+        event,
+        kCGScrollWheelEventPointDeltaAxis1
+    ) == -20);
+    assert(CGEventGetIntegerValueField(
+        event,
+        kCGScrollWheelEventDeltaAxis2
+    ) == 3);
+    assert(ScrollTapReversedEventCount(tap) == 1);
+    assert(ScrollTapGetLastInput(tap) ==
+           ScrollTapLastInputMouseWheelReversed);
 
     CFRelease(event);
     ScrollTapDestroy(tap);
