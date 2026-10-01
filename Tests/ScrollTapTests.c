@@ -4,11 +4,12 @@
 #include <math.h>
 #include <stdio.h>
 
-static CGEventRef make_discrete_event(
+static CGEventRef make_event(
     int64_t vertical_line,
     double vertical_fixed,
     int64_t vertical_point,
-    int64_t horizontal_line
+    int64_t horizontal_line,
+    bool continuous
 ) {
     CGEventRef event = CGEventCreateScrollWheelEvent(
         NULL,
@@ -36,7 +37,7 @@ static CGEventRef make_discrete_event(
     CGEventSetIntegerValueField(
         event,
         kCGScrollWheelEventIsContinuous,
-        0
+        continuous ? 1 : 0
     );
     return event;
 }
@@ -45,7 +46,7 @@ static void test_disabled_filter_does_nothing(void) {
     ScrollTap *tap = ScrollTapCreate();
     assert(tap != NULL);
 
-    CGEventRef event = make_discrete_event(3, 3.5, 24, 0);
+    CGEventRef event = make_event(3, 3.5, 24, 0, false);
     assert(!ScrollTapProcessScrollEvent(tap, event));
     assert(CGEventGetIntegerValueField(
         event,
@@ -61,7 +62,7 @@ static void test_discrete_vertical_is_reversed(void) {
     assert(tap != NULL);
     ScrollTapSetEnabled(tap, true);
 
-    CGEventRef event = make_discrete_event(4, 2.5, 20, 3);
+    CGEventRef event = make_event(4, 2.5, 20, 3, false);
     assert(ScrollTapProcessScrollEvent(tap, event));
     assert(CGEventGetIntegerValueField(
         event,
@@ -87,9 +88,33 @@ static void test_discrete_vertical_is_reversed(void) {
     ScrollTapDestroy(tap);
 }
 
+static void test_continuous_event_is_untouched(void) {
+    ScrollTap *tap = ScrollTapCreate();
+    assert(tap != NULL);
+    ScrollTapSetEnabled(tap, true);
+
+    CGEventRef event = make_event(2, 1.75, 14, -1, true);
+    assert(!ScrollTapProcessScrollEvent(tap, event));
+    assert(CGEventGetIntegerValueField(
+        event,
+        kCGScrollWheelEventDeltaAxis1
+    ) == 2);
+    assert(CGEventGetIntegerValueField(
+        event,
+        kCGScrollWheelEventDeltaAxis2
+    ) == -1);
+    assert(ScrollTapPassedThroughEventCount(tap) == 1);
+    assert(ScrollTapGetLastInput(tap) ==
+           ScrollTapLastInputContinuousPassedThrough);
+
+    CFRelease(event);
+    ScrollTapDestroy(tap);
+}
+
 int main(void) {
     test_disabled_filter_does_nothing();
     test_discrete_vertical_is_reversed();
+    test_continuous_event_is_untouched();
     puts("ScrollTap tests passed.");
     return 0;
 }
