@@ -11,6 +11,7 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 @property(nonatomic, strong) NSMenuItem *enabledMenuItem;
 @property(nonatomic, strong) NSMenuItem *statusMenuItem;
 @property(nonatomic, strong) NSMenuItem *accessibilityMenuItem;
+@property(nonatomic, strong) NSMenuItem *loginMenuItem;
 @property(nonatomic, strong) NSTimer *refreshTimer;
 @property(nonatomic) BOOL permissionPromptPending;
 @end
@@ -82,6 +83,15 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         keyEquivalent:@""];
     self.accessibilityMenuItem.target = self;
     [menu addItem:self.accessibilityMenuItem];
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    self.loginMenuItem = [[NSMenuItem alloc]
+        initWithTitle:@"Start at Login"
+        action:nil
+        keyEquivalent:@""];
+    self.loginMenuItem.enabled = NO;
+    [menu addItem:self.loginMenuItem];
+
     [menu addItem:[NSMenuItem separatorItem]];
 
     NSMenuItem *quit = [[NSMenuItem alloc]
