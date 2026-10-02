@@ -1,5 +1,6 @@
 #import "AppDelegate.h"
 #import <ApplicationServices/ApplicationServices.h>
+#import <ServiceManagement/ServiceManagement.h>
 #import "ScrollTap.h"
 
 static bool reversingEnabled = true;
@@ -87,9 +88,9 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 
     self.loginMenuItem = [[NSMenuItem alloc]
         initWithTitle:@"Start at Login"
-        action:nil
+        action:@selector(toggleLaunchAtLogin:)
         keyEquivalent:@""];
-    self.loginMenuItem.enabled = NO;
+    self.loginMenuItem.target = self;
     [menu addItem:self.loginMenuItem];
 
     [menu addItem:[NSMenuItem separatorItem]];
@@ -141,6 +142,18 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         forKey:EnabledPreferenceKey];
     ScrollTapSetEnabled(self.scrollTap, reversingEnabled);
     [self refreshMenuState];
+}
+
+- (void)toggleLaunchAtLogin:(id)sender {
+    (void)sender;
+
+    SMAppService *service = [SMAppService mainAppService];
+    NSError *error = nil;
+    if (service.status == SMAppServiceStatusEnabled) {
+        (void)[service unregisterAndReturnError:&error];
+    } else {
+        (void)[service registerAndReturnError:&error];
+    }
 }
 
 - (void)refreshMenuState {
