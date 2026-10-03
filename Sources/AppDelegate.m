@@ -149,11 +149,28 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 
     SMAppService *service = [SMAppService mainAppService];
     NSError *error = nil;
+    BOOL succeeded = NO;
     if (service.status == SMAppServiceStatusEnabled) {
-        (void)[service unregisterAndReturnError:&error];
+        succeeded = [service unregisterAndReturnError:&error];
     } else {
-        (void)[service registerAndReturnError:&error];
+        succeeded = [service registerAndReturnError:&error];
     }
+
+    if (!succeeded) {
+        [self presentError:error title:@"Could Not Change Login Item"];
+    }
+}
+
+- (void)presentError:(NSError *)error title:(NSString *)title {
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.alertStyle = NSAlertStyleWarning;
+    alert.messageText = title;
+    alert.informativeText = error.localizedDescription != nil
+        ? error.localizedDescription
+        : @"An unknown error occurred.";
+
+    [NSApp activateIgnoringOtherApps:YES];
+    [alert runModal];
 }
 
 - (void)refreshMenuState {
