@@ -184,6 +184,11 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         ? @"Enable Reverse Mouse Scrolling…"
         : @"Reverse Mouse Scrolling";
 
+    SMAppServiceStatus loginStatus = [SMAppService mainAppService].status;
+    self.loginMenuItem.state = loginStatus == SMAppServiceStatusEnabled
+        ? NSControlStateValueOn
+        : NSControlStateValueOff;
+
     if (!reversingEnabled) {
         self.statusMenuItem.title = @"Status: Off";
     } else if (permissionRequired) {
