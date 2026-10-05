@@ -52,6 +52,16 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
     self.scrollTap = NULL;
 }
 
+- (BOOL)applicationShouldHandleReopen:(NSApplication *)sender
+                     hasVisibleWindows:(BOOL)hasVisibleWindows {
+    (void)sender;
+    (void)hasVisibleWindows;
+
+    [self refreshState:nil];
+    [self.statusItem.button performClick:nil];
+    return YES;
+}
+
 - (void)buildMenu {
     self.statusItem = [[NSStatusBar systemStatusBar]
         statusItemWithLength:NSSquareStatusItemLength];
