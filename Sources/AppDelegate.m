@@ -55,9 +55,8 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
 - (void)buildMenu {
     self.statusItem = [[NSStatusBar systemStatusBar]
         statusItemWithLength:NSSquareStatusItemLength];
-    self.statusItem.button.image = [NSImage
-        imageWithSystemSymbolName:@"arrow.up.arrow.down"
-        accessibilityDescription:@"Mouse Scroll Reverser"];
+    [self setStatusIconSymbol:@"arrow.up.arrow.down.circle.fill"
+                  description:@"Mouse scroll reversal is starting"];
 
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Mouse Scroll Reverser"];
 
@@ -198,6 +197,47 @@ static NSString *const EnabledPreferenceKey = @"Enabled";
         self.statusMenuItem.title = @"Status: Running";
     } else {
         self.statusMenuItem.title = @"Status: Event tap is inactive";
+    }
+
+    [self updateStatusIconForEnabled:reversingEnabled
+                  permissionRequired:permissionRequired
+                             running:running];
+}
+
+- (void)updateStatusIconForEnabled:(BOOL)enabled
+                permissionRequired:(BOOL)permissionRequired
+                           running:(BOOL)running {
+    if (permissionRequired) {
+        [self setStatusIconSymbol:@"exclamationmark.triangle.fill"
+                      description:@"Accessibility permission is required"];
+    } else if (enabled && running) {
+        [self setStatusIconSymbol:@"arrow.up.arrow.down.circle.fill"
+                      description:@"Mouse scroll reversal is running"];
+    } else if (enabled) {
+        [self setStatusIconSymbol:@"exclamationmark.triangle.fill"
+                      description:@"Mouse Scroll Reverser could not start"];
+    } else {
+        [self setStatusIconSymbol:@"pause.circle"
+                      description:@"Mouse scroll reversal is off"];
+    }
+}
+
+- (void)setStatusIconSymbol:(NSString *)symbolName
+                description:(NSString *)description {
+    NSStatusBarButton *button = self.statusItem.button;
+    NSImage *image = [NSImage imageWithSystemSymbolName:symbolName
+                               accessibilityDescription:description];
+
+    button.toolTip = description;
+    if (image != nil) {
+        // template images follow the current menu bar appearance
+        image.template = YES;
+        button.title = @"";
+        button.image = image;
+        button.imagePosition = NSImageOnly;
+    } else {
+        button.image = nil;
+        button.title = @"↕";
     }
 }
 
