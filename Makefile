@@ -15,6 +15,7 @@ $(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h Source
 	xcrun clang -fobjc-arc -Wall -Wextra \
 		-framework Cocoa \
 		-framework ApplicationServices \
+		-framework ServiceManagement \
 		Sources/main.m Sources/AppDelegate.m Sources/ScrollTap.c -o "$@"
 
 $(CONTENTS_DIR)/Info.plist: Resources/Info.plist
