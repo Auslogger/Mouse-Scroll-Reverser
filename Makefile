@@ -1,4 +1,5 @@
 APP_NAME := MouseScrollReverser
+BUNDLE_ID := com.gri.MouseScrollReverser
 BUILD_DIR := build
 APP_BUNDLE := $(BUILD_DIR)/$(APP_NAME).app
 CONTENTS_DIR := $(APP_BUNDLE)/Contents
@@ -12,9 +13,12 @@ ARCHS ?= arm64 x86_64
 ARCH_FLAGS := $(foreach arch,$(ARCHS),-arch $(arch))
 COMMON_FLAGS := $(ARCH_FLAGS) -isysroot $(SDK_PATH) -mmacosx-version-min=13.0 -I Sources -Wall -Wextra
 
-.PHONY: all test run clean
+.PHONY: all app test verify run clean
 
-all: $(EXECUTABLE) $(CONTENTS_DIR)/Info.plist
+all: app test verify
+
+app: $(EXECUTABLE) $(CONTENTS_DIR)/Info.plist
+	codesign --force --sign - --identifier "$(BUNDLE_ID)" --timestamp=none "$(APP_BUNDLE)"
 
 $(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h Sources/ScrollTap.c Sources/ScrollTap.h
 	mkdir -p "$(MACOS_DIR)"
@@ -37,7 +41,13 @@ $(TEST_EXECUTABLE): Tests/ScrollTapTests.c Sources/ScrollTap.c Sources/ScrollTap
 test: $(TEST_EXECUTABLE)
 	"$(TEST_EXECUTABLE)"
 
-run: all
+verify: app
+	plutil -lint "$(CONTENTS_DIR)/Info.plist"
+	codesign --verify --deep --strict --verbose=2 "$(APP_BUNDLE)"
+	file "$(EXECUTABLE)"
+	lipo "$(EXECUTABLE)" -verify_arch $(ARCHS)
+
+run: app
 	open "$(APP_BUNDLE)"
 
 clean:
