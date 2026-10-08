@@ -4,7 +4,9 @@ BUILD_DIR := build
 APP_BUNDLE := $(BUILD_DIR)/$(APP_NAME).app
 CONTENTS_DIR := $(APP_BUNDLE)/Contents
 MACOS_DIR := $(CONTENTS_DIR)/MacOS
+RESOURCES_DIR := $(CONTENTS_DIR)/Resources
 EXECUTABLE := $(MACOS_DIR)/$(APP_NAME)
+APP_LICENSE := $(RESOURCES_DIR)/LICENSE
 TEST_EXECUTABLE := $(BUILD_DIR)/ScrollTapTests
 
 SDK_PATH := $(shell xcrun --sdk macosx --show-sdk-path)
@@ -17,7 +19,7 @@ COMMON_FLAGS := $(ARCH_FLAGS) -isysroot $(SDK_PATH) -mmacosx-version-min=13.0 -I
 
 all: app test verify
 
-app: $(EXECUTABLE) $(CONTENTS_DIR)/Info.plist
+app: $(EXECUTABLE) $(CONTENTS_DIR)/Info.plist $(APP_LICENSE)
 	codesign --force --sign - --identifier "$(BUNDLE_ID)" --timestamp=none "$(APP_BUNDLE)"
 
 $(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h Sources/ScrollTap.c Sources/ScrollTap.h
@@ -31,6 +33,10 @@ $(EXECUTABLE): Sources/main.m Sources/AppDelegate.m Sources/AppDelegate.h Source
 $(CONTENTS_DIR)/Info.plist: Resources/Info.plist
 	mkdir -p "$(CONTENTS_DIR)"
 	cp Resources/Info.plist "$@"
+
+$(APP_LICENSE): LICENSE
+	mkdir -p "$(RESOURCES_DIR)"
+	cp LICENSE "$@"
 
 $(TEST_EXECUTABLE): Tests/ScrollTapTests.c Sources/ScrollTap.c Sources/ScrollTap.h
 	mkdir -p "$(BUILD_DIR)"
