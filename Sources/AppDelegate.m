@@ -377,4 +377,3 @@ static const NSUInteger TrustedChecksRequiredForRecovery = 3;
 }
 
 @end
-

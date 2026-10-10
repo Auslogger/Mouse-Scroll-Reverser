@@ -270,4 +270,3 @@ uint64_t ScrollTapPassedThroughEventCount(const ScrollTap *tap) {
 ScrollTapLastInput ScrollTapGetLastInput(const ScrollTap *tap) {
     return tap == NULL ? ScrollTapLastInputNone : tap->last_input;
 }
-

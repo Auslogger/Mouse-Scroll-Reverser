@@ -115,14 +115,10 @@ vertical, and continuous-event behavior.
 - `Sources/main.m`: application entry point.
 - `Tests/ScrollTapTests.c`: synthetic-event tests.
 - `Resources/Info.plist`: application-bundle metadata.
-- `Resources/AppIcon.png`: original app icon artwork.
-- `Resources/Assets.xcassets`: generated macOS icon sizes.
-- `Resources/AppIcon.icns`: compiled icon copied into the app bundle.
 - `Makefile`: local build, signing, test, and verification commands.
 
 ## License
 
 Mouse Scroll Reverser is available under the MIT License. See `LICENSE` for
 the complete terms.
-
 

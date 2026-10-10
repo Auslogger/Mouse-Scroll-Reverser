@@ -44,4 +44,3 @@ ScrollTapLastInput ScrollTapGetLastInput(const ScrollTap *tap);
 bool ScrollTapProcessScrollEvent(ScrollTap *tap, CGEventRef event);
 
 #endif
-
