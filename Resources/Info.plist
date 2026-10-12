@@ -8,6 +8,10 @@
     <string>Mouse Scroll Reverser</string>
     <key>CFBundleExecutable</key>
     <string>MouseScrollReverser</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>com.gri.MouseScrollReverser</string>
     <key>CFBundleInfoDictionaryVersion</key>

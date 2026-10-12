@@ -12,6 +12,7 @@ RESOURCES_DIR := $(CONTENTS_DIR)/Resources
 APP_EXECUTABLE := $(MACOS_DIR)/$(EXECUTABLE_NAME)
 APP_INFO_PLIST := $(CONTENTS_DIR)/Info.plist
 APP_LICENSE := $(RESOURCES_DIR)/LICENSE
+APP_ICON := $(RESOURCES_DIR)/AppIcon.icns
 TEST_EXECUTABLE := $(BUILD_DIR)/ScrollTapTests
 
 SDK_PATH := $(shell xcrun --sdk macosx --show-sdk-path)
@@ -42,7 +43,7 @@ APP_OBJECTS := \
 
 all: app test verify
 
-app: $(APP_EXECUTABLE) $(APP_INFO_PLIST) $(APP_LICENSE)
+app: $(APP_EXECUTABLE) $(APP_INFO_PLIST) $(APP_LICENSE) $(APP_ICON)
 	codesign --force --sign - --identifier "$(BUNDLE_ID)" --options runtime --timestamp=none "$(APP_BUNDLE)"
 
 $(APP_EXECUTABLE): $(APP_OBJECTS)
@@ -60,6 +61,10 @@ $(APP_INFO_PLIST): Resources/Info.plist
 $(APP_LICENSE): LICENSE
 	mkdir -p "$(RESOURCES_DIR)"
 	cp LICENSE "$@"
+
+$(APP_ICON): Resources/AppIcon.icns
+	mkdir -p "$(RESOURCES_DIR)"
+	cp Resources/AppIcon.icns "$@"
 
 $(OBJECT_DIR)/%.o: Sources/%.m
 	mkdir -p "$(OBJECT_DIR)"
@@ -80,6 +85,7 @@ test: $(TEST_EXECUTABLE)
 
 verify: app
 	plutil -lint "$(APP_INFO_PLIST)"
+	test -f "$(APP_ICON)"
 	codesign --verify --deep --strict --verbose=2 "$(APP_BUNDLE)"
 	file "$(APP_EXECUTABLE)"
 	lipo "$(APP_EXECUTABLE)" -verify_arch $(ARCHS)
