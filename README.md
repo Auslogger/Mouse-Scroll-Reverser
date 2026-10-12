@@ -4,7 +4,7 @@
 
 # Mouse Scroll Reverser
 
-A utility I developed for myself because MacOS doesn't allow you to natively specify scroll behaviour for different devices. Since I like using the trackpad with the natural scroll direction, and the mouse with the "direct" one - this no-fuss utility provides just that without you ever having to bother about changing the settings back and forth. Very quality of life.
+A utility I developed for myself because MacOS doesn't allow you to natively specify scroll behaviour for different devices. Since I like using the trackpad with the natural scroll direction, and the mouse with the "direct" one - this no-fuss utility provides just that without you ever having to bother about changing the settings back and forth, or having to make-do with only 1 scroll direction for both devices. Very quality of life.
 
 ## How it works
 
@@ -27,7 +27,7 @@ Then open **System Settings → Privacy & Security**, scroll to **Security**, an
 choose **Open Anyway**. Confirm the warning, then grant the app Accessibility
 permission when requested. Enjoy!!
 
-## Build (for developers only)
+## Build (for developers)
 
 Requirements:
 
@@ -76,8 +76,7 @@ The tests construct synthetic Core Graphics scroll events and verify disabled, v
 - `Tests/ScrollTapTests.c`: synthetic event tests.
 - `Resources/Info.plist`: application metadata.
 - `Resources/AppIcon.png`: original app icon artwork.
-- `Resources/Assets.xcassets`:<img width="1254" height="1254" alt="MouseScrollReverser" src="https://github.com/user-attachments/assets/e2ace94b-ecd6-4d60-952a-3de625a6437c" />
- macOS icon sizes.
+- `Resources/Assets.xcassets`: macOS icon sizes.
 - `Resources/AppIcon.icns`: compiled icon copied into the app bundle.
 - `Makefile`: local build, signing, test, and verification commands.
 
