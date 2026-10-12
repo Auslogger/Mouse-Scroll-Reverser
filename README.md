@@ -4,7 +4,7 @@
 
 # Mouse Scroll Reverser
 
-A utility I developed for myself because MacOS doesn't allow you to natively specify scroll behaviour for different devices. Since I like using the trackpad with the natural scroll direction, and the mouse with the "direct" one - this no-fuss utility provides just that without you ever having to bother about changing the settings back and forth, or having to make-do with only 1 scroll direction for both devices. Very quality of life.
+A utility developed initially for personal use, because MacOS doesn't allow you to natively specify scroll behaviour for different devices. This no-fuss utility allows you to use the trackpad with the natural scroll direction, and the mouse with the "direct" one, without you to ever having to bother about changing the settings back and forth, or having to make-do with only 1 scroll direction for both devices. Very quality of life.
 
 ## How it works
 
